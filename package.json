@@ -5,11 +5,20 @@
   "description": "A UX regression guard for AI-powered UI changes.",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
-    "zod": "^3.23.8",
-    "@types/chrome": "^0.0.270"
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@types/chrome": "^0.0.270",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0"
   }
 }

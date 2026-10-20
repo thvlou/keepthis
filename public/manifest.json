@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "KeepThis",
+  "description": "A UX regression guard for AI-powered UI changes.",
+  "version": "0.0.1",
+  "permissions": ["sidePanel", "storage", "scripting", "activeTab"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
+}
