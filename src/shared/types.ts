@@ -23,6 +23,12 @@ export type RouteInfo = {
 // Guardrail
 // ---------------------------------------------------------------------------
 
+/**
+ * "must" vs "should" (REV-02~04): surfaced in the Baseline priority toggle,
+ * included in the Gemini prompt input once gemini-client.ts exists (step 7 —
+ * add the section 8.3 "Guardrails marked must..." addendum there), and shown
+ * on result cards as "Must stay" / "Prefer to stay".
+ */
 export type GuardrailPriority = "must" | "should";
 
 export type EvidenceType = "position" | "visibility" | "count" | "flow" | "visual";
@@ -76,6 +82,14 @@ export type ElementSnapshot = {
   visibility: ElementVisibility;
   landmark: string | null;
   headingLevel: 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Computed CSS `position`. Fixed and sticky elements are pinned to the
+   * viewport rather than the document, so their geometry must not be
+   * scroll-normalised the way ordinary elements are (see
+   * diff/element-predicates.ts). Optional because baselines captured before
+   * this field existed simply do not have it; those fall back to "static".
+   */
+  cssPosition?: string | undefined;
 };
 
 export type ContentHierarchyEntry = {
@@ -135,6 +149,43 @@ export type BaselineRecord = {
   };
   snapshot: PageSnapshot;
   guardrails: Guardrail[];
+  accessibilityFindings: AccessibilityFinding[];
+};
+
+// ---------------------------------------------------------------------------
+// Accessibility (Tier 1 — axe-core, separate track from Guardrails/AiAnalysis)
+// ---------------------------------------------------------------------------
+
+export type AccessibilityImpact = "critical" | "serious" | "moderate" | "minor";
+
+export type AccessibilityFinding = {
+  id: string;
+  /** axe-core rule id, e.g. "label", "color-contrast". */
+  ruleId: string;
+  impact: AccessibilityImpact;
+  description: string;
+  helpUrl: string;
+  /** CSS selector of the offending element, as reported by axe-core. */
+  targetSelector: string;
+  /**
+   * Element identity used to match this finding across baseline/current,
+   * computed the same way as PageSnapshot element fingerprints (section 7.2)
+   * so an unrelated DOM insertion elsewhere on the page doesn't make a
+   * still-present violation look resolved+newlyIntroduced.
+   */
+  elementFingerprint: ElementFingerprint;
+  matchConfidence: MatchConfidence;
+};
+
+/**
+ * Baseline vs Current accessibilityFindings, matched by ruleId+elementFingerprint.
+ * Computed entirely in code (src/diff/accessibility-diff.ts) — never sent to
+ * or judged by Gemini.
+ */
+export type AccessibilityComparison = {
+  resolved: AccessibilityFinding[];
+  stillPresent: AccessibilityFinding[];
+  newlyIntroduced: AccessibilityFinding[];
 };
 
 // ---------------------------------------------------------------------------
@@ -196,9 +247,12 @@ export type AnalysisEvidence = {
   evidenceId: string;
   source: EvidenceSource;
   statement: string;
-  before?: string;
-  current?: string;
-  delta?: string;
+  // Explicit `| undefined` (not just `?:`) so this matches zod's inferred
+  // type for optional fields under exactOptionalPropertyTypes — the schema
+  // validation result in gemini-client.ts is assigned directly to AiAnalysis.
+  before?: string | undefined;
+  current?: string | undefined;
+  delta?: string | undefined;
 };
 
 export type AnalysisIssue = {
@@ -231,4 +285,17 @@ export type AiAnalysis = {
   issues: AnalysisIssue[];
   preserved: PreservedGuardrail[];
   insufficientEvidenceReasons: string[];
+};
+
+// ---------------------------------------------------------------------------
+// ComparisonContext (REV-01) — no new data collection, composed from
+// RouteInfo, LocalDiff.viewport.comparable, and analysisMode, all of which
+// already exist. Always shown at the top of the Results screen.
+// ---------------------------------------------------------------------------
+
+export type ComparisonContext = {
+  routeKey: string;
+  viewportComparable: boolean;
+  queryChanged: boolean;
+  analysisMode: AnalysisMode;
 };

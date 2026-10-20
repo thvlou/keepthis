@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reference Library — KeepThis demo target</title>
+<style>
+  :root {
+    --ink: #1c1c1e;
+    --muted: #6b6b70;
+    --border: #e3e3e6;
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --accent: #c1502e;
+    --accent-ink: #ffffff;
+    --ph-1: #d8d3cd;
+    --ph-2: #cdd3d8;
+    --ph-3: #d3cdd8;
+    --ph-4: #d3d8cd;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+
+  .site-nav {
+    display: flex;
+    gap: 24px;
+  }
+
+  .nav-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .nav-link:hover { color: var(--ink); }
+
+  main {
+    padding: 24px 40px 60px;
+    max-width: 900px;
+  }
+
+  main[aria-busy="true"] { padding-top: 24px; }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    margin: 0 0 55px;
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 520px;
+  }
+
+  .cta {
+    display: inline-block;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  h2 {
+    margin: 20px 0 20px;
+    font-size: 19px;
+    font-weight: 600;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    height: 160px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .card .thumb {
+    flex: 1;
+    width: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .card p {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .thumb.ph-0 { background-color: var(--ph-1); }
+  .thumb.ph-1 { background-color: var(--ph-2); }
+  .thumb.ph-2 { background-color: var(--ph-3); }
+  .thumb.ph-3 { background-color: var(--ph-4); }
+
+  /* -- #changed state additions -- */
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 32px;
+  }
+
+  .filter-btn {
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .filter-btn.is-active {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .trending {
+    margin: 0 0 52px;
+  }
+
+  .trending-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .trending-grid .card {
+    height: 340px;
+  }
+
+  /* -- #loading state -- */
+
+  .skeleton-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 30px;
+  }
+
+  .skeleton {
+    height: 70px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #e7e7ea 0%, #f1f1f3 50%, #e7e7ea 100%);
+  }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <span class="brand">RefLib</span>
+    <nav class="site-nav">
+      <a href="#" class="nav-link" data-testid="nav-library">Library</a>
+      <a href="#" class="nav-link" data-testid="nav-saved">Saved</a>
+    </nav>
+  </header>
+
+  <main id="app-main" data-testid="app-main"></main>
+
+  <script>
+    var TRANSPARENT_GIF = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7";
+    var FILTERS = ["All", "UX/UI", "Font", "Colors", "Icons", "Layout"];
+
+    var main = document.getElementById("app-main");
+
+    function cardHtml(index, testid, label) {
+      return (
+        '<article class="card" data-testid="' + testid + '">' +
+          '<img class="thumb ph-' + (index % 4) + '" src="' + TRANSPARENT_GIF + '" alt="" />' +
+          '<p>' + label + " " + String(index + 1).padStart(2, "0") + "</p>" +
+        "</article>"
+      );
+    }
+
+    function cardsHtml(count, testid, label) {
+      var out = "";
+      for (var i = 0; i < count; i++) out += cardHtml(i, testid, label);
+      return out;
+    }
+
+    function filterBarHtml() {
+      return FILTERS.map(function (label, i) {
+        var active = i === 0 ? " is-active" : "";
+        return '<button type="button" class="filter-btn' + active + '" data-testid="filter-btn">' + label + "</button>";
+      }).join("");
+    }
+
+    function headHtml() {
+      return (
+        "<h1>Reference Library</h1>" +
+        '<p class="subtitle">Browse, compare, and save the visual references you are building from.</p>' +
+        '<button type="button" class="cta" data-testid="save-cta">Save to collection</button>'
+      );
+    }
+
+    function renderDefault() {
+      main.removeAttribute("aria-busy");
+      main.innerHTML =
+        headHtml() +
+        "<h2>All references</h2>" +
+        '<div class="grid" data-testid="reference-grid">' +
+          cardsHtml(8, "reference-card", "Reference") +
+        "</div>";
+    }
+
+    function renderChanged() {
+      main.removeAttribute("aria-busy");
+      main.innerHTML =
+        headHtml() +
+        "<h2>All references</h2>" +
+        '<div class="filter-bar" data-testid="filter-bar">' + filterBarHtml() + "</div>" +
+        '<div class="grid" data-testid="reference-grid">' +
+          cardsHtml(8, "reference-card", "Reference") +
+        "</div>" +
+        '<section class="trending" data-testid="trending-section" style="margin-top: 32px;">' +
+          "<h2>Trending collections</h2>" +
+          '<div class="trending-grid" data-testid="trending-grid">' +
+            cardsHtml(3, "trending-card", "Trend") +
+          "</div>" +
+        "</section>";
+    }
+
+    function renderLoading() {
+      main.setAttribute("aria-busy", "true");
+      var skeletons = "";
+      for (var i = 0; i < 6; i++) skeletons += '<div class="skeleton"></div>';
+      main.innerHTML =
+        "<h1>Reference Library</h1>" +
+        '<div class="skeleton-stack" data-testid="skeleton-stack">' + skeletons + "</div>";
+    }
+
+    function render() {
+      var hash = location.hash;
+      if (hash === "#changed") renderChanged();
+      else if (hash === "#loading") renderLoading();
+      else renderDefault();
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll(".nav-link"), function (el) {
+      el.addEventListener("click", function (e) { e.preventDefault(); });
+    });
+
+    window.addEventListener("hashchange", render);
+    render();
+  </script>
+</body>
+</html>

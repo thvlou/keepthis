@@ -57,8 +57,8 @@ and let the user decide what becomes the next baseline.
 |---|---|
 | 형태 | Chrome Extension (Manifest V3) + Side Panel |
 | 대상 환경 | `http://localhost/*`, `http://127.0.0.1/*` 전용 |
-| 기간 | Day 0 = 8/18~8/19 (기획), 구현은 평일 5일 (Day1 = 8/20, Day2 = 8/21, Day3 = 8/24, Day4 = 8/25, Day5 = 8/26) |
-| 현재 | Day 0. 기획 문서만 존재하고 코드 산출물 0. 구현은 Day 1(8/20)에 시작 |
+| 기간 | 기획 8/18~8/19, 구현 5일 규모의 MVP |
+| 현재 진행 상황 | **`devlog/` 참고.** 이 표에 날짜별 계획을 적어두지 않는다 — 첫날 세운 예상 일정일 뿐이라 실제 진행과 어긋난다. 실제 작업일 기준 기록은 `devlog/INDEX.md`가 기준 |
 | 이름 | `KeepThis` (확정). 이전 가칭 `Intent Guard`는 폐기 |
 | UI 언어 | 영어 (D-05) |
 | 문서 언어 | 한국어 |
@@ -128,6 +128,8 @@ Figma AI 리포트: AI 산출물을 신뢰할 수 있다는 응답 32%, 프로�
 | D-05 | MVP UI 문구는 영어로 통일. 한국어는 MVP 이후 |
 | D-06 | `View change`는 P1. MVP DoD 제외 |
 | D-07 | routeKey는 `origin + normalized pathname` |
+| D-08 | Guardrail 후보는 Baseline 스냅샷에서 **코드가 관찰해** 제시한다. 사용자는 체크박스로 확인만 한다 (2026-08-22 승인, 아래 6.2절) |
+| D-09 | 결과 화면은 **첫 화면 영향**을 먼저 보여주고, 측정 수치는 접힌 영역에 근거로 보관한다 (2026-08-22 승인, 아래 4.3절) |
 
 ### 3.1 D-01 · analysisMode 분기
 
@@ -248,14 +250,24 @@ query 차이만을 근거로 regression·intent violation·unintended change로 
 - `Intent violation`
 - `잘못된 변화` 및 동등한 가치 판단 표현
 
-### 4.3 결과 화면 정보 위계 (고정)
+### 4.3 결과 화면 정보 위계 (D-09, 2026-08-22 갱신)
 
-1. 변화 요약
-2. 객관적 Before/Current evidence
+1. **첫 화면 영향** — 코드가 계산한 "무엇이 보이지 않게 됐는가 / 몇 개가 줄었는가"를 맨 앞에 둔다
+2. 각 영향의 근거가 되는 Before → Current 수치
 3. 연결된 Guardrail과 UX 의미
 4. Confidence와 제한 사항
-5. View change (P1)
-6. Fix (secondary action)
+5. **측정된 변화 전체 (기본 접힘)** — 원본 diff 항목과 변화 서술문. 삭제하지 않고 한 번의 클릭 뒤에 보관한다
+6. View change (P1)
+7. Fix (secondary action)
+
+**갱신 배경**: 원래 위계는 "변화 요약"(예: "카테고리 바가 추가되어 57.5px 밀림")을 맨 앞에 뒀는데,
+이건 사실이지 사용자가 판단할 수 있는 형태가 아니다. 코드는 이미 더 중요한 걸 계산해두고 있었다 —
+fold 이탈 여부, 보이는 콘텐츠 수 변화, 첫 화면 컨트롤 수 변화. 이걸 앞세우고 픽셀 수치는 근거로
+내린다. 다만 수치를 **버리지는 않는다**: 근거를 확인할 수 없으면 신뢰가 떨어지므로 접힌 영역에
+그대로 유지한다.
+
+이 재배치는 해석이 아니라 **측정값의 재서술**이다(0.3절 책임 분리 유지). 따라서 문구는 중립적이어야
+하고 `change_summary` 모드에서도 그대로 쓸 수 있어야 한다(4.2절 금지 표현 준수).
 
 `Fix`를 primary CTA로 크게 배치하거나 별도 Prompt 작성 페이지를 만들지 않는다.
 
@@ -376,15 +388,41 @@ type AiAnalysis = {
 
 나쁜 예: 더 예쁘고 프로페셔널해야 한다 / 트렌디해야 한다 / 시니어 디자이너 수준이어야 한다
 
+### 6.2 Guardrail 후보는 코드가 관찰한다 (D-08, 2026-08-22 승인)
+
+Guardrail 후보는 Gemini 추천이 아니라 **방금 캡처한 Baseline 스냅샷에서 코드가 직접 계산**한다.
+`src/diff/observe-baseline.ts`가 유일한 생성 지점이다.
+
+**배경**: 빈 칸에 Guardrail을 쓰라는 건 "앞으로 어떤 AI 수정이 뭘 망가뜨릴지"를 예측하라는 요구인데,
+사용자가 그걸 가장 모르는 시점에 묻는 것이었다. 그래서 대부분 Skip하게 되고, Skip하면
+`change_summary` 모드로 떨어져 제품의 차별점(승인한 기준과의 충돌 판단)을 한 번도 못 보게 된다.
+관찰 기반 후보는 이 순서를 뒤집는다 — 코드가 "지금 이미 관찰되는 사실"을 문장으로 제시하고
+사용자는 한 번 탭으로 확인만 한다.
+
+규칙:
+- 모든 후보 문장은 **관찰 가능**해야 한다 (6.1절 원칙 그대로). 미적 판단 금지
+- 후보를 만든 측정 기준과, 나중에 Check Changes가 그 Guardrail을 검사할 측정 기준이 **반드시 같아야**
+  한다. 두 파일이 "컨트롤"의 정의에 대해 서로 다르게 판단하면 실제로 안 바뀐 것이 위반으로 잡힌다.
+  이 때문에 `observe-baseline.ts`와 `compute-diff.ts`는 `src/diff/element-predicates.ts` 하나를 공유한다
+- 상위 2개만 기본 선택 상태로 제시하고 나머지는 해제 상태로 제안한다
+- 사용자가 **체크를 남긴 것만** Guardrail이 된다. 확인하지 않은 관찰은 제안일 뿐 저장하지 않는다
+- `source`는 `user_written`을 유지한다 — AI가 관여하지 않았고, 그 문장이 지켜져야 한다고 주장하는 주체는
+  사용자다. 코드는 문장을 초안했을 뿐이다 (AC-06의 두 값 제약 유지)
+- 관찰할 게 없는 페이지에서는 빈 배열을 반환하고, 시트는 기존처럼 수동 입력으로 진행한다
+  (6.1절 "Baseline 저장은 Guardrail 작성 때문에 막히지 않는다")
+
+Gemini 기반 `recommendGuardrails`는 코드에 남아 있으나 이 시트에서 자동 호출하지 않는다.
+
 저장 직후 bottom sheet:
 
 ```
 Baseline saved
-Anything that must stay true?
+This is what is true of the page right now.
+Keep the ones that must stay true.
 
-[✓] Reference content stays dominant
-[✓] Save remains easy to reach
-[ ] Controls remain secondary to content
+[✓] "Cart" stays reachable without scrolling
+[✓] At least 8 main content items stay visible without scrolling
+[ ] The first screen keeps at most 3 controls
 
 [ Add your own ]                        [ Done ]
 ```
@@ -459,11 +497,11 @@ Threshold는 오류 판정이 아니다. AI에 보낼 후보 변화의 양을 �
 
 ---
 
-## 8. Gemini 2.5 Flash 연동
+## 8. Gemini Flash 연동
 
 ### 8.1 기본 사항
 
-- 기본 모델 `gemini-2.5-flash`. **상수로 박지 말고 설정 한 곳에서 교체 가능하게** 한다
+- 기본 모델은 `src/storage/settings-repository.ts`의 `DEFAULT_GEMINI_MODEL` 한 곳에서만 정의한다(상수로 여기저기 박지 않음). 최초 구현 시 `gemini-2.5-flash`였으나, 2026-08-21 실제 API 호출에서 "This model models/gemini-2.5-flash is no longer available to new users." 404 오류로 확인되어 `gemini-3.6-flash`로 교체함(devlog day4 참고). 모델명이 다시 바뀌어도 이 절 본문을 매번 갱신할 필요는 없다 — 코드의 상수 위치가 기준이다
 - API 호출은 content script나 대상 페이지가 아니라 **service worker에서만** 수행한다
 - endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
 - 두 screenshot을 inline image part로 넣고 전체 payload 20MB 미만 유지
@@ -629,17 +667,19 @@ demo/
   "name": "KeepThis",
   "description": "A UX regression guard for AI-powered UI changes.",
   "permissions": ["sidePanel", "storage", "scripting", "activeTab"],
-  "host_permissions": [
-    "http://localhost/*",
-    "http://127.0.0.1/*",
-    "https://generativelanguage.googleapis.com/*"
-  ],
+  "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "service-worker.js", "type": "module" },
   "side_panel": { "default_path": "sidepanel.html" }
 }
 ```
 
-`<all_urls>`는 요구하지 않는다. `file://` host permission과 파일 읽기 권한을 넣지 않는다(D-03).
+`host_permissions`는 `<all_urls>`다 (APPROVED, 2026-08-21 트러블슈팅 — devlog day4 참고). 원래는
+`http://localhost/*`, `http://127.0.0.1/*`, Gemini 엔드포인트만 좁게 선언했으나, Side Panel에서
+트리거되는 `chrome.tabs.captureVisibleTab`이 `activeTab`을 정상적으로 못 받는 크롬 플랫폼 자체의
+제약(문서화된 버그) 때문에 `<all_urls>` 없이는 스크린샷 캡처가 동작하지 않는다는 게 실제 브라우저
+검증 중 확인됐다. 이 변경으로 넓어진 건 **매니페스트 권한**뿐이다 — 실제 동작 범위는
+`src/shared/route-key.ts`의 `isSupportedRoute()`가 코드 레벨에서 그대로 localhost/127.0.0.1(http)로
+제한한다. `file://` host permission과 파일 읽기 권한은 여전히 넣지 않는다(D-03).
 
 ### 9.5 저장 제약
 
@@ -661,6 +701,14 @@ demo/
 Results 안에서 `Add guardrails` 편집기가 열리는 경로는 Results의 하위 상태로 처리한다.
 
 설정 화면: Gemini API Key 입력/교체/삭제, 모델 ID, 무료 티어 주의 동의, 분석 대상 도메인 안내.
+
+### 9.7 흐름·뎁스 최소화 결정 (APPROVED)
+
+MV3 확장은 로컬 CLI(Claude Code 등)를 직접 실행하거나 프롬프트를 자동 입력할 수 없다(D-03·12.3 그대로 유지). 아래는 그 제약 안에서 뎁스를 줄이는 결정이다.
+
+- **No Baseline 화면 인라인 API 키 입력**: API 키가 없으면 별도 Settings 화면으로 이동하지 않고, No Baseline 화면 안에 키 입력 필드를 바로 노출한다. Settings 화면 자체는 유지하되(교체·삭제용), 최초 설정 시의 화면 왕복 한 단계를 없앤다.
+- **Fix Prompt Copy 직후 다음 행동 안내**: `Copy prompt` 클릭 시 다음에 뭘 해야 하는지 알려주는 짧은 확인 문구를 표시한다. 사용자마다 쓰는 외부 AI 도구가 다를 수 있으므로 특정 도구명(Claude Code 등)을 문구에 박지 않는다. 정확한 문구는 8단계 UI 작업 시 확정한다.
+- **Side Panel 탭별 상태 유지**: Results 화면에서 Fix 등으로 다른 탭/앱으로 전환했다가 돌아와도 화면 상태가 초기화되지 않아야 한다. 외부에서 수정을 적용하고 돌아왔을 때 `Check Changes` 한 번의 클릭으로 재검증할 수 있어야 한다 — 화면 구현 시 지켜야 할 제약으로, 별도 저장 로직 추가가 필요한 것은 아니다.
 
 ---
 
@@ -1022,3 +1070,12 @@ KeepThis
 - `FACT`(확인됨) / `APPROVED`(승인됨) / `PROPOSAL`(미승인 제안) / `INFERENCE`(추론) / `OPEN`(결정 필요)를 구분해서 표기한다
 - 추론을 FACT처럼 표현하지 않는다
 - AI가 생성한 분석 결과를 실제 사용자 조사 결과처럼 표현하지 않는다
+
+### 20.1 개발 로그 (devlog)
+
+- 파일 단위는 15장의 파이프라인 "단계"가 아니라 **실제 작업일**이다. 하루 안에 여러 단계를 진행해도 새 파일을 만들지 않고 그날의 `devlog/dayN.md`에 `##` 섹션으로 계속 누적한다. 새 작업일이 시작될 때만 다음 번호로 새 파일을 만든다
+- 실질적인 개발 작업(코드 작성·테스트·빌드 등 산출물이 있는 작업)이 끝났거나 기획 세부조정이 확정된 경우에만 [devlog/TEMPLATE.md](devlog/TEMPLATE.md) 형식으로 그날의 파일에 자동으로 기록하고, 새 파일을 만들었을 때만 `devlog/INDEX.md`에 한 줄 추가한다. 사용자가 매번 요청하지 않아도 항상 수행한다
+- 사용자가 짧게 질문만 하거나, 개발 산출물 없이 세부 논의만 오가거나, 개발 작업이 아닌 요청인 경우에는 자동으로 기록하지 않는다. 대신 devlog에 기록할지 먼저 물어본다
+- devlog를 갱신했으면 답변 마지막 줄에 갱신 사실을 알린다
+- 원본 대화나 tool 출력을 그대로 옮기지 않는다. 결정·트러블슈팅(문제/원인/해결)·검증 결과만 압축해서 남긴다. 문제가 없었던 작업은 트러블슈팅 섹션을 생략한다
+- 코드가 아니라 접근 방식·정책·범위 같은 **기획 세부조정**이 발생하면, 일반 트러블슈팅 형식 대신 "사용자의 요청/의문점"과 "변경 방안"을 구체적으로 남긴다 (TEMPLATE.md의 전용 형식 참고). 이 프로젝트에서 가장 중요하게 취급하는 기록이다

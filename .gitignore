@@ -1,4 +1,10 @@
 node_modules/
 dist/
 *.log
+
+# Secrets — never commit API keys
 .env
+.env.*
+*.pem
+*.key
+.claude/settings.local.json

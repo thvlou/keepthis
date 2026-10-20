@@ -4,7 +4,15 @@
  * these actions only. See CLAUDE.md section 9.2 (components) and 11.1 (failure conditions).
  */
 
-import type { AiAnalysis, BaselineRecord, Guardrail, LocalDiff, PageSnapshot } from "./types";
+import type {
+  AccessibilityComparison,
+  AiAnalysis,
+  BaselineRecord,
+  ComparisonContext,
+  Guardrail,
+  LocalDiff,
+  PageSnapshot,
+} from "./types";
 
 export const MESSAGE_ACTIONS = [
   "GET_ACTIVE_ROUTE",
@@ -41,6 +49,14 @@ export const ERROR_CODES = [
   "GEMINI_SERVER_ERROR",
   "SCHEMA_VALIDATION_FAILED",
   "UNSUPPORTED_PAGE",
+  /** ANALYZE_AGAIN has no cached prior Check Changes capture to reuse (D-01: it never recaptures). */
+  "ANALYSIS_CACHE_MISSING",
+  /**
+   * chrome.runtime.sendMessage resolved with no usable response — e.g. the
+   * service worker has no listener for this action (a stale build still
+   * running) or its handler rejected before calling sendResponse.
+   */
+  "BACKGROUND_UNREACHABLE",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -57,6 +73,20 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 // ---------------------------------------------------------------------------
 // Per-action request/response payloads
 // ---------------------------------------------------------------------------
+
+/**
+ * REV-01/A11Y-10: Results screen always needs these alongside the Guardrail
+ * analysis — regardless of analysisMode, and whether or not any Guardrail
+ * issues were found — so both full-analysis actions return them together.
+ * ANALYZE_AGAIN deliberately excludes them: D-01 reuses the same capture, so
+ * they're identical to what CHECK_CHANGES already returned.
+ */
+type FullAnalysisResponse = {
+  diff: LocalDiff;
+  analysis: AiAnalysis;
+  accessibilityComparison: AccessibilityComparison;
+  comparisonContext: ComparisonContext;
+};
 
 export type MessagePayloadMap = {
   GET_ACTIVE_ROUTE: {
@@ -81,15 +111,18 @@ export type MessagePayloadMap = {
   };
   CHECK_CHANGES: {
     request: { routeKey: string };
-    response: { diff: LocalDiff; analysis: AiAnalysis };
+    response: FullAnalysisResponse;
   };
   ANALYZE_AGAIN: {
-    request: { routeKey: string; diff: LocalDiff };
+    // No `diff` field: the server re-uses its own session-cached copy of the
+    // last Check Changes capture (D-01 — never recaptures the page), so the
+    // client doesn't need to round-trip it back.
+    request: { routeKey: string };
     response: { analysis: AiAnalysis };
   };
   ANALYZE_VISIBLE_ONLY: {
     request: { routeKey: string };
-    response: { diff: LocalDiff; analysis: AiAnalysis };
+    response: FullAnalysisResponse;
   };
   IGNORE_ISSUE: {
     request: { routeKey: string; issueId: string; reason: IgnoreReason };
@@ -127,3 +160,11 @@ export type MessageRequest<A extends MessageAction> = {
 };
 
 export type MessageResponse<A extends MessageAction> = Result<MessagePayloadMap[A]["response"]>;
+
+/**
+ * A true discriminated union over every action (unlike MessageRequest<MessageAction>,
+ * which only distributes `payload` into a same-shaped union without correlating it
+ * to `action`). Use this for the service worker's onMessage switch so narrowing
+ * on `message.action` also narrows `message.payload`.
+ */
+export type AnyMessageRequest = { [A in MessageAction]: MessageRequest<A> }[MessageAction];

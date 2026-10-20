@@ -1,0 +1,384 @@
+/**
+ * Design tokens, pulled from the Figma file (V3 · 04 Flow) via Dev Mode MCP
+ * rather than transcribed by eye. Variable names match Figma's own so the
+ * two can be diffed later.
+ *
+ * The design is deliberately retro — bitmap font, 1px/2px hard borders,
+ * beveled Win95-style buttons, no radius, no shadows. Keeping that intact
+ * matters: it is what makes the panel read as a measuring instrument rather
+ * than another opinionated design tool.
+ *
+ * Sizes are in px on purpose. DungGeunMo is a bitmap face that only renders
+ * crisply at its designed sizes, so the scale below uses the exact values
+ * from the Figma frames — rem scaling would blur it.
+ */
+
+@font-face {
+  font-family: "DungGeunMo";
+  src: url("/fonts/DungGeunMo.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* Colour — from Figma variables */
+  --kt-text-primary: #000000;
+  --kt-text-muted: #666666;
+  --kt-bg-surface: #ffffff;
+  --kt-bg-control: #c0c0c0;
+  --kt-border-ink: #000000;
+  --kt-border-strong: #808080;
+  --kt-state-focus: #ffffcc;
+  --kt-status-success: #00aa00;
+
+  /* Beveled control fill (Figma gradient on Ignore/Accept buttons) */
+  --kt-control-face-top: #ececec;
+  --kt-control-face-bottom: #d4d0c8;
+
+  /*
+   * Type scale.
+   *
+   * The Figma frames use 9/10/11px throughout, and those sizes were chosen
+   * against Latin placeholder text. DungGeunMo is a bitmap face: Latin
+   * uppercase survives at 9px because the glyphs are a few strokes, but
+   * Korean syllables pack three components into the same grid and turn to
+   * mush. Real content is Korean, so anything read as a sentence gets its
+   * own larger step while labels keep the Figma size.
+   *
+   * --kt-size-label is therefore for UPPERCASE LATIN ONLY. Never set Korean
+   * text at it.
+   */
+  --kt-font: "DungGeunMo", "Apple SD Gothic Neo", "Malgun Gothic", monospace;
+  --kt-size-title: 22px;
+  --kt-line-title: 32px;
+  --kt-size-card-title: 14px;
+  --kt-line-card-title: 20px;
+  /* Korean prose */
+  --kt-size-body: 13px;
+  --kt-line-body: 20px;
+  /* Korean secondary text: evidence lines, metadata values */
+  --kt-size-value: 12px;
+  --kt-line-value: 18px;
+  /* Korean fine print — hints, footnotes */
+  --kt-size-note: 11px;
+  --kt-line-note: 17px;
+  /* Latin uppercase labels only */
+  --kt-size-label: 9px;
+  --kt-line-label: 13px;
+
+  /* Spacing — the spacer frames used between body sections */
+  --kt-space-9: 9px;
+  --kt-space-16: 16px;
+  --kt-space-18: 18px;
+  --kt-space-20: 20px;
+  --kt-space-22: 22px;
+  --kt-space-26: 26px;
+
+  /* Panel geometry */
+  --kt-body-pad: 14px;
+  --kt-label-col: 68px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--kt-font);
+  font-size: var(--kt-size-body);
+  line-height: var(--kt-line-body);
+  color: var(--kt-text-primary);
+  background: var(--kt-bg-surface);
+  /* Bitmap faces must not be smoothed or they lose their pixel grid. */
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+/* --- Primitives shared by every screen ------------------------------- */
+
+.kt-eyebrow {
+  font-size: var(--kt-size-label);
+  line-height: var(--kt-line-label);
+  color: var(--kt-text-muted);
+  margin: 0;
+}
+
+.kt-title {
+  font-size: var(--kt-size-title);
+  line-height: var(--kt-line-title);
+  margin: var(--kt-space-9) 0 0;
+  word-break: break-word;
+}
+
+.kt-subtitle {
+  font-size: var(--kt-size-body);
+  line-height: var(--kt-line-body);
+  color: var(--kt-text-muted);
+  margin: var(--kt-space-22) 0 0;
+}
+
+/** The 2px black rule under the title block. */
+.kt-rule {
+  height: 2px;
+  background: var(--kt-text-primary);
+  margin-top: var(--kt-space-26);
+}
+
+/** Bordered fact box — comparison context, guardrail lists, error logs. */
+.kt-box {
+  border: 1px solid var(--kt-border-strong);
+  background: var(--kt-bg-surface);
+  padding: 10px 12px;
+}
+
+/** Emphasis band — accessibility header, issue title band. */
+.kt-band {
+  background: var(--kt-state-focus);
+  border: 1px solid var(--kt-border-ink);
+  padding: 0 var(--kt-body-pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/** Heavier frame for the thing the screen is actually about. */
+.kt-card {
+  border: 2px solid var(--kt-border-ink);
+  background: var(--kt-bg-surface);
+}
+
+/** Label/value row: fixed label column, value takes the rest. */
+.kt-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.kt-row > .kt-row-label {
+  flex: 0 0 var(--kt-label-col);
+  font-size: var(--kt-size-label);
+  line-height: var(--kt-line-label);
+  color: var(--kt-text-muted);
+  margin: 0;
+}
+
+.kt-row > .kt-row-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--kt-size-body);
+  line-height: var(--kt-line-body);
+  margin: 0;
+  word-break: break-word;
+}
+
+.kt-divider {
+  height: 1px;
+  background: var(--kt-bg-control);
+}
+
+/** Korean fine print. Not --kt-size-label: that size is for Latin caps. */
+.kt-meta {
+  font-size: var(--kt-size-note);
+  line-height: var(--kt-line-note);
+  color: var(--kt-text-muted);
+  margin: 0;
+  word-break: keep-all;
+}
+
+/** Korean wraps mid-word by default, which shreds short lines in a 400px panel. */
+.kt-subtitle,
+.kt-row-value,
+.kt-meta {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* --- Controls -------------------------------------------------------- */
+
+.kt-btn {
+  font-family: var(--kt-font);
+  font-size: var(--kt-size-label);
+  line-height: var(--kt-line-body);
+  color: var(--kt-text-primary);
+  background: linear-gradient(to bottom, var(--kt-control-face-top), var(--kt-control-face-bottom));
+  border: 1px solid var(--kt-border-ink);
+  border-radius: 0;
+  min-height: 40px;
+  padding: 0 12px;
+  cursor: pointer;
+  /* Hard offset shadow, not a blur — the Figma "Button" component's
+     drop-shadow(2px 2px 0 #808080). A soft shadow would fight the
+     1px hard edges everywhere else. */
+  box-shadow: 2px 2px 0 var(--kt-border-strong);
+}
+
+/**
+ * Screen-level action: fixed 180px, centred, 12px label without brackets.
+ * Card-level actions keep the smaller bracketed form ([ FIX ]) so the two
+ * scales stay visually distinct — one commits the screen, one acts on a
+ * single finding.
+ */
+.kt-btn--wide {
+  width: 180px;
+  display: block;
+  margin: 0 auto;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.kt-btn:disabled {
+  color: var(--kt-border-strong);
+  cursor: default;
+}
+
+/** The single primary action on a screen. */
+.kt-btn--primary {
+  background: var(--kt-text-primary);
+  color: var(--kt-bg-surface);
+}
+
+/** Inline text toggle — disclosures, secondary links. */
+.kt-btn--text {
+  background: none;
+  border: none;
+  min-height: 0;
+  padding: 0;
+  font-size: var(--kt-size-label);
+  color: var(--kt-text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.kt-badge {
+  background: var(--kt-text-primary);
+  color: var(--kt-bg-surface);
+  font-size: var(--kt-size-value);
+  line-height: var(--kt-line-value);
+  padding: 7px 0;
+  min-width: 72px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+input[type="text"],
+textarea,
+select {
+  font-family: var(--kt-font);
+  font-size: var(--kt-size-body);
+  color: var(--kt-text-primary);
+  background: var(--kt-bg-surface);
+  border: 1px solid var(--kt-border-strong);
+  border-radius: 0;
+  padding: 8px;
+}
+
+/**
+ * Native selects render with the OS chrome — rounded, gradient, system
+ * font — which is the one place the retro treatment breaks visibly. The
+ * appearance reset plus a drawn caret keeps it inside the design.
+ */
+select {
+  appearance: none;
+  background: linear-gradient(to bottom, var(--kt-control-face-top), var(--kt-control-face-bottom));
+  border: 1px solid var(--kt-border-ink);
+  box-shadow: 2px 2px 0 var(--kt-border-strong);
+  font-size: var(--kt-size-label);
+  padding: 6px 22px 6px 8px;
+  cursor: pointer;
+  /* Caret drawn as a background triangle so no icon asset is needed. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--kt-text-primary) 50%),
+    linear-gradient(135deg, var(--kt-text-primary) 50%, transparent 50%),
+    linear-gradient(to bottom, var(--kt-control-face-top), var(--kt-control-face-bottom));
+  background-position:
+    calc(100% - 12px) calc(50% + 1px),
+    calc(100% - 8px) calc(50% + 1px),
+    0 0;
+  background-size: 4px 4px, 4px 4px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/** Checkboxes and radios keep the square, hard-edged look of the rest. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--kt-text-primary);
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+
+/** Compact control used beside a text field, not a screen-level action. */
+.kt-btn--compact {
+  min-height: 34px;
+  padding: 0 14px;
+}
+
+/**
+ * Editable guardrail statement (FR-03 "수정").
+ *
+ * Reads as body text with a hairline underline rather than a full input
+ * box: three bordered fields stacked above the bordered "add your own"
+ * input turned the sheet into a form, when what it has to look like is a
+ * list of sentences you can correct.
+ */
+.kt-guardrail-statement {
+  font-family: var(--kt-font);
+  font-size: var(--kt-size-value);
+  line-height: var(--kt-line-value);
+  color: var(--kt-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  resize: none;
+  overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* Nothing marks the field at rest, so focus has to carry the whole signal. */
+.kt-guardrail-statement:focus {
+  outline: none;
+  border-color: var(--kt-border-ink);
+  background: var(--kt-bg-surface);
+}
+
+/* --- Info tooltip ---------------------------------------------------- */
+
+.kt-info-trigger {
+  font-family: var(--kt-font);
+  font-size: var(--kt-size-label);
+  line-height: 1;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--kt-text-primary);
+  background: var(--kt-bg-control);
+  border: 1px solid var(--kt-border-ink);
+  border-radius: 0;
+}
+
+.kt-info-trigger[aria-expanded="true"] {
+  color: var(--kt-bg-surface);
+  background: var(--kt-border-ink);
+}
+
+.kt-info-bubble {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: -2px;
+  z-index: 2;
+  width: 232px;
+  padding: 8px 10px;
+  font-size: var(--kt-size-note);
+  line-height: var(--kt-line-note);
+  color: var(--kt-text-primary);
+  background: var(--kt-state-focus);
+  border: 2px solid var(--kt-border-ink);
+  box-shadow: 2px 2px 0 var(--kt-border-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}

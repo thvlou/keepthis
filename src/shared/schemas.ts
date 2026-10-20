@@ -35,7 +35,15 @@ export const guardrailSchema = z.object({
   source: z.enum(["ai_suggested", "user_written"]),
 });
 
-export const guardrailListSchema = z.array(guardrailSchema).max(3);
+/**
+ * 6.1 caps *AI recommendations* at 3 and explicitly allows the user to add
+ * their own on top ("사용자는 선택 해제·수정·직접 추가 가능"). The original
+ * .max(3) here mistakenly applied 5.1's issues.maxItems to guardrails and
+ * blocked that. Raised to 5: enough headroom for user-written conditions
+ * while staying close to the 3-issue ceiling, so a violated guardrail is
+ * unlikely to have no issue card to appear in.
+ */
+export const guardrailListSchema = z.array(guardrailSchema).max(5);
 
 // ---------------------------------------------------------------------------
 // PageSnapshot
@@ -68,6 +76,8 @@ const elementSnapshotSchema = z.object({
   }),
   landmark: z.string().nullable(),
   headingLevel: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.null()]),
+  // Optional: baselines saved before this field existed don't carry it.
+  cssPosition: z.string().optional(),
 });
 
 export const pageSnapshotSchema = z.object({
@@ -105,6 +115,27 @@ export const pageSnapshotSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Accessibility (Tier 1 — axe-core, separate track from Guardrails/AiAnalysis)
+// ---------------------------------------------------------------------------
+
+export const accessibilityFindingSchema = z.object({
+  id: z.string().min(1),
+  ruleId: z.string().min(1),
+  impact: z.enum(["critical", "serious", "moderate", "minor"]),
+  description: z.string(),
+  helpUrl: z.string(),
+  targetSelector: z.string(),
+  elementFingerprint: elementFingerprintSchema,
+  matchConfidence: z.enum(["high", "medium", "low"]),
+});
+
+export const accessibilityComparisonSchema = z.object({
+  resolved: z.array(accessibilityFindingSchema),
+  stillPresent: z.array(accessibilityFindingSchema),
+  newlyIntroduced: z.array(accessibilityFindingSchema),
+});
+
+// ---------------------------------------------------------------------------
 // BaselineRecord
 // ---------------------------------------------------------------------------
 
@@ -121,6 +152,7 @@ export const baselineRecordSchema = z.object({
   }),
   snapshot: pageSnapshotSchema,
   guardrails: guardrailListSchema,
+  accessibilityFindings: z.array(accessibilityFindingSchema),
 });
 
 // ---------------------------------------------------------------------------
