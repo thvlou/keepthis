@@ -8,3 +8,7 @@ dist/
 *.pem
 *.key
 .claude/settings.local.json
+
+# Personal work records — kept locally, never published
+devlog/
+docs/production-record.md

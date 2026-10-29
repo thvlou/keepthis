@@ -193,7 +193,6 @@ npm run demo         # http://localhost:4173
 | `src/sidepanel/` | React Side Panel 화면·컴포넌트·문구 |
 | `src/preview/` | 고정 데이터 디자인 프리뷰 |
 | `demo/` | 3상태 데모 페이지와 시연 대본 |
-| `devlog/` | 결정·트러블슈팅·검증 기록 |
 
 **스택**: Chrome Extension Manifest V3 · React 18 · TypeScript · Vite · zod · axe-core · Vitest
 **AI 모델**: 기본값은 `src/storage/settings-repository.ts`의 `DEFAULT_GEMINI_MODEL` (현재 `gemini-3.6-flash`)
@@ -217,5 +216,4 @@ npm run demo         # http://localhost:4173
 ## 문서
 
 - [`CLAUDE.md`](CLAUDE.md) — 제품 정의, 확정 결정(D-01~D-09), 데이터 계약, 수용 기준
-- [`devlog/PROJECT-LOG.md`](devlog/PROJECT-LOG.md) — 기획·UX 결정과 트러블슈팅 통합 기록
 - [`demo/DEMO-SCRIPT.md`](demo/DEMO-SCRIPT.md) — 시연 대본
